@@ -22,7 +22,7 @@ export default class ProductData {
 
     addProductToCart(product) {
       const cartItems = getLocalStorage("so-cart") || []; // get cart array of items from local storage if null set to empty array
-      cartItems.push(product);
+      cartItems.push(this.product);
       setLocalStorage("so-cart", cartItems);
     }
 
