@@ -1,6 +1,7 @@
 // main.js
 import ProductData from "./ProductData.mjs";
 import ProductList from "./ProductList.mjs";
+import Alert from "./alert.js";
 
 // 1. Create a data source for tents
 const dataSource = new ProductData("tents");
@@ -13,3 +14,9 @@ const productList = new ProductList("tents", dataSource, listElement);
 
 // 4. Initialize it (fetch data + render)
 productList.init();
+
+// 5. Create a new Alert instance and point it to the alerts.json file
+const alert = new Alert("./json/alerts.json");
+
+// 6. Initialize the alert system (fetch alerts and render them if available)
+alert.init();
