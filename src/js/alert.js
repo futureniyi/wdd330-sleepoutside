@@ -1,5 +1,3 @@
-// import { getLocalStorage } from "./utils.mjs";
-
 export default class Alert {
   constructor(alertsPath) {
     this.alertsPath = alertsPath;
