@@ -2,6 +2,10 @@
 import ProductData from "./ProductData.mjs";
 import ProductList from "./ProductList.mjs";
 import Alert from "./alert.js";
+import { loadHeaderFooter } from "./utils.mjs";
+
+//
+loadHeaderFooter();
 
 // 1. Create a data source for tents
 const dataSource = new ProductData("tents");
