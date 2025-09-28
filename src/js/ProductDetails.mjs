@@ -3,7 +3,7 @@ import { getLocalStorage, setLocalStorage } from "./utils.mjs";
 export default class ProductData {
 
     constructor(productId, dataSource) {
-        this.productID = productId;
+        this.productId = productId;
         this.product = {};
         this.dataSource = dataSource;
     }
@@ -21,9 +21,9 @@ export default class ProductData {
     }
 
     addProductToCart(product) {
-      const cartItems = getLocalStorage("so-cart") || []; // get cart array of items from local storage if null set to empty array
-      cartItems.push(this.product);
-      setLocalStorage("so-cart", cartItems);
+        const cartItems = getLocalStorage("so-cart") || []; // get cart array of items from local storage if null set to empty array
+        cartItems.push(this.product);
+        setLocalStorage("so-cart", cartItems);
     }
 
     renderProductDetails() {
