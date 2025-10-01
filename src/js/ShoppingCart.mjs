@@ -42,13 +42,31 @@ export default class ShoppingCart {
     renderListWithTemplate(cartItemTemplate, this.listElement, items);
   }
 
+  // updateTotals(items) {
+  //   const total = items.reduce((sum, i) => {
+  //     const qty = Number(i?.Quantity ?? i?.quantity ?? 1);
+  //     const price = Number(i?.FinalPrice ?? 0);
+  //     return sum + qty * price;
+  //   }, 0);
+  //   const totalEl = document.querySelector("#cart-total");
+  //   if (totalEl) totalEl.textContent = `$${total.toFixed(2)}`;
+  // }
   updateTotals(items) {
     const total = items.reduce((sum, i) => {
       const qty = Number(i?.Quantity ?? i?.quantity ?? 1);
       const price = Number(i?.FinalPrice ?? 0);
       return sum + qty * price;
     }, 0);
+
+    const footer = document.querySelector(".cart-footer");
     const totalEl = document.querySelector("#cart-total");
-    if (totalEl) totalEl.textContent = `$${total.toFixed(2)}`;
+
+    if (items.length > 0) {
+      if (footer) footer.classList.remove("hide");
+      if (totalEl) totalEl.textContent = `$${total.toFixed(2)}`;
+    } else {
+      if (footer) footer.classList.add("hide");
+    }
   }
+
 }
