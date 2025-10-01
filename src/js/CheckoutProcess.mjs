@@ -1,5 +1,5 @@
 import { getLocalStorage } from "./utils.mjs";
-import ExternalServices from "./ProductData.mjs";
+import ExternalServices from "./ExternalServices.mjs";
 
 const services = new ExternalServices();
 
@@ -87,7 +87,9 @@ export default class CheckoutProcess {
 
         order.orderDate = new Date().toISOString();
         order.orderTotal = this.orderTotal;
+        // order.orderTotal = this.orderTotal.toFixed(2).toString();
         order.tax = this.tax;
+        // order.tax = this.tax.toFixed(2).toString();
         order.shipping = this.shipping;
         order.items = packageItems(this.list);
         //console.log(order);
