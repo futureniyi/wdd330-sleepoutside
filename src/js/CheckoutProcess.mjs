@@ -1,29 +1,27 @@
-import { getLocalStorage } from "./utils.mjs";
+import {
+    getLocalStorage,
+    setLocalStorage,
+    alertMessage,
+    removeAllAlerts,
+} from "./utils.mjs";
 import ExternalServices from "./ExternalServices.mjs";
 
 const services = new ExternalServices();
 
 function formDataToJSON(formElement) {
-    // convert the form data to a JSON object
     const formData = new FormData(formElement);
     const convertedJSON = {};
-    formData.forEach((value, key) => {
-        convertedJSON[key] = value;
-    });
+    formData.forEach((value, key) => (convertedJSON[key] = value));
     return convertedJSON;
 }
 
 function packageItems(items) {
-    const simplifiedItems = items.map((item) => {
-        console.log(item);
-        return {
-            id: item.Id,
-            price: item.FinalPrice,
-            name: item.Name,
-            quantity: 1,
-        };
-    });
-    return simplifiedItems;
+    return items.map((item) => ({
+        id: item.Id,
+        price: item.FinalPrice,
+        name: item.Name,
+        quantity: Number(item.Quantity ?? 1),
+    }));
 }
 
 export default class CheckoutProcess {
@@ -38,67 +36,92 @@ export default class CheckoutProcess {
     }
 
     init() {
-        this.list = getLocalStorage(this.key);
+        this.list = getLocalStorage(this.key) || [];
         this.calculateItemSummary();
     }
 
     calculateItemSummary() {
-        // calculate and display the total amount of the items in the cart, and the number of items.
         const summaryElement = document.querySelector(
-            this.outputSelector + " #cartTotal"
+            `${this.outputSelector} #cartTotal`
         );
         const itemNumElement = document.querySelector(
-            this.outputSelector + " #num-items"
+            `${this.outputSelector} #num-items`
         );
+
         itemNumElement.innerText = this.list.length;
-        // calculate the total of all the items in the cart
-        const amounts = this.list.map((item) => item.FinalPrice);
-        this.itemTotal = amounts.reduce((sum, item) => sum + item);
-        summaryElement.innerText = `$${this.itemTotal}`;;
+
+        const amounts = this.list.map((item) => Number(item.FinalPrice || 0));
+        this.itemTotal = amounts.reduce((sum, n) => sum + n, 0);
+
+        if (summaryElement) {
+            summaryElement.innerText = `$${this.itemTotal.toFixed(2)}`;
+        }
     }
 
     calculateOrderTotal() {
-        // calculate the shipping and tax amounts. Then use them to along with the cart total to figure out the order total
-        this.tax = (this.itemTotal * .06);
-        this.shipping = 10 + (this.list.length - 1) * 2;
-        this.orderTotal = (
-            parseFloat(this.itemTotal) +
-            parseFloat(this.tax) +
-            parseFloat(this.shipping)
-        )
-        // display the totals.
+        this.tax = this.itemTotal * 0.06;
+        this.shipping = 10 + Math.max(0, this.list.length - 1) * 2;
+        this.orderTotal = this.itemTotal + this.tax + this.shipping;
         this.displayOrderTotals();
     }
 
     displayOrderTotals() {
-        // once the totals are all calculated display them in the order summary page
         const tax = document.querySelector(`${this.outputSelector} #tax`);
         const shipping = document.querySelector(`${this.outputSelector} #shipping`);
-        const orderTotal = document.querySelector(`${this.outputSelector} #orderTotal`);
+        const orderTotal = document.querySelector(
+            `${this.outputSelector} #orderTotal`
+        );
 
-        tax.innerText = `$${this.tax.toFixed(2)}`;
-        shipping.innerText = `$${this.shipping.toFixed(2)}`;
-        orderTotal.innerText = `$${this.orderTotal.toFixed(2)}`;
+        if (tax) tax.innerText = `$${this.tax.toFixed(2)}`;
+        if (shipping) shipping.innerText = `$${this.shipping.toFixed(2)}`;
+        if (orderTotal) orderTotal.innerText = `$${this.orderTotal.toFixed(2)}`;
     }
 
     async checkout() {
         const formElement = document.forms["checkout"];
-        const order = formDataToJSON(formElement);
 
-        order.orderDate = new Date().toISOString();
-        order.orderTotal = this.orderTotal;
-        // order.orderTotal = this.orderTotal.toFixed(2).toString();
-        order.tax = this.tax;
-        // order.tax = this.tax.toFixed(2).toString();
-        order.shipping = this.shipping;
-        order.items = packageItems(this.list);
-        //console.log(order);
+        if (!formElement.checkValidity()) {
+            formElement.reportValidity();
+            return;
+        }
+
+        const json = formDataToJSON(formElement);
+        json.orderDate = new Date().toISOString();
+        json.orderTotal = this.orderTotal.toFixed(2).toString();
+        json.tax = this.tax.toFixed(2).toString();
+        json.shipping = this.shipping;
+        json.items = packageItems(this.list);
+
+        const submitBtn = document.querySelector("#checkoutSubmit");
+        submitBtn?.setAttribute("disabled", "disabled");
 
         try {
-            const response = await services.checkout(order);
-            console.log(response);
+            const res = await services.checkout(json);
+            console.log("Checkout success:", res);
+
+            setLocalStorage("so-cart", []);
+            location.assign("/checkout/success.html");
         } catch (err) {
-            console.log(err);
+            removeAllAlerts?.();
+
+            if (err?.name === "servicesError") {
+                const msg = err.message;
+                if (msg && typeof msg === "object") {
+                    Object.keys(msg).forEach((key) =>
+                        alertMessage?.(msg[key] ?? `${key}: ${msg[key]}`)
+                    );
+                } else if (typeof msg === "string") {
+                    alertMessage?.(msg);
+                } else {
+                    alertMessage?.("Checkout failed. Please verify your details.");
+                }
+                console.error("Checkout failed:", err.status, err.message);
+            } else {
+                alertMessage?.("Network or unexpected error. Try again.");
+                console.error("Unexpected error:", err);
+            }
+        } finally {
+            submitBtn?.removeAttribute("disabled");
         }
     }
 }
